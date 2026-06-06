@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TableBook - Premium Restaurant Reservations</title>
+  <!-- Google Fonts & Tailwind CSS CDN -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Custom Stylesheet link -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-[#070a13] text-slate-150 flex flex-col min-h-screen">
+
+  <!-- STICKY NAVBAR -->
+  <header class="sticky top-0 z-40 bg-[#070a13]/85 backdrop-blur-md border-b border-slate-800/60 h-20 transition-all flex items-center">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex items-center justify-between">
+      <!-- Logo -->
+      <a href="#home" class="flex items-center gap-2 group">
+        <div class="w-10 h-10 bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-xl flex items-center justify-center transition-all">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+        </div>
+        <div>
+          <span class="font-display font-black text-2xl tracking-tight text-white block">Table<span class="text-amber-400 font-semibold">Book</span></span>
+          <span class="text-[10px] text-slate-500 tracking-wider font-mono uppercase block -mt-1">Gourmet Dining</span>
+        </div>
+      </a>
+
+      <!-- Menu links -->
+      <nav class="hidden lg:flex items-center gap-8 text-sm font-medium text-slate-300">
+        <a href="#home" class="hover:text-amber-400 transition-colors">Home</a>
+        <a href="#reservations" class="hover:text-amber-400 transition-colors">Reservations</a>
+        <a href="#contact" class="hover:text-amber-400 transition-colors">Contact</a>
+        <a href="admin.html" class="hover:text-amber-400 transition-colors text-amber-500 flex items-center gap-1">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+          Admin Console
+        </a>
+      </nav>
+
+      <!-- Book table button -->
+      <a href="#reservations" class="hidden sm:inline-flex px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition-all tracking-wide shadow-lg shadow-amber-500/10">
+        Book Table
+      </a>
+    </div>
+  </header>
+
+  <!-- HERO SECTION -->
+  <section id="home" class="relative h-[85vh] min-h-[550px] flex items-center justify-center overflow-hidden">
+    <div class="absolute inset-0 z-0">
+      <img src="https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=1600&q=80" alt="Fine dining restaurant" class="w-full h-full object-cover brightness-[0.25]">
+      <div class="absolute inset-0 bg-gradient-to-t from-[#070a13] via-transparent to-transparent"></div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full text-center lg:text-left">
+      <div class="max-w-2xl space-y-6">
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-full text-xs font-mono uppercase tracking-widest leading-none">
+          Accepting Table Bookings Now
+        </div>
+        <h1 class="font-display font-black text-4xl sm:text-5xl lg:text-6xl text-white tracking-tight leading-[1.1]">
+          Reserve Your Perfect <br><span class="text-amber-400">Dining Experience</span>
+        </h1>
+        <p class="text-base sm:text-lg text-slate-300 font-light max-w-lg mx-auto lg:mx-0">
+          Book your table online in seconds. Real-time scheduling guarantees, automated status sheets updates, and instant email dispatches.
+        </p>
+        <div class="pt-4 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+          <a href="#reservations" class="w-full sm:w-auto px-7 py-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl shadow-lg transition-all text-sm block">Book Your Visit</a>
+          <a href="#contact" class="w-full sm:w-auto px-7 py-4 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-white font-medium rounded-xl text-sm block">Schedules & Contact</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESERVATION SECTION -->
+  <section id="reservations" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+    <div class="text-center max-w-xl mx-auto space-y-3 mb-10">
+      <span class="text-amber-500 font-mono text-xs font-bold uppercase tracking-widest block">Instant Reservation Request</span>
+      <h2 class="font-display font-extrabold text-3xl sm:text-4xl text-white">Arrange Your Dinner Table</h2>
+      <p class="text-slate-400 text-sm">Please register your contact information, party headcount, and date preference. Receive dynamic email notifications.</p>
+    </div>
+
+    <!-- RESERVATION FORM -->
+    <div class="max-w-2xl mx-auto">
+      <div id="form-container" class="glassmorphism-gold rounded-2xl p-6 sm:p-8 space-y-6 shadow-xl relative backdrop-blur-md">
+        
+        <form id="reservation-form" class="space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <!-- Customer Name -->
+            <div class="space-y-1.5 md:col-span-2">
+              <label for="customerName" class="text-xs font-semibold text-slate-300 tracking-wide block">Customer Name</label>
+              <input type="text" id="customerName" name="customerName" required placeholder="Eleanor Vance" class="w-full bg-[#111726]/65 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-500 transition-all">
+              <span id="err-customerName" class="text-red-400 text-xxs font-mono mt-1 hidden">Please enter your complete name.</span>
+            </div>
+
+            <!-- Email Address -->
+            <div class="space-y-1.5">
+              <label for="email" class="text-xs font-semibold text-slate-300 tracking-wide block">Email Address</label>
+              <input type="email" id="email" name="email" required placeholder="eleanor@example.com" class="w-full bg-[#111726]/65 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-500 transition-all">
+              <span id="err-email" class="text-red-400 text-xxs font-mono mt-1 hidden">Enter a valid email identifier.</span>
+            </div>
+
+            <!-- Phone Number -->
+            <div class="space-y-1.5">
+              <label for="phone" class="text-xs font-semibold text-slate-300 tracking-wide block">Phone Number</label>
+              <input type="tel" id="phone" name="phone" required placeholder="+1 (555) 019-2834" class="w-full bg-[#111726]/65 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-500 transition-all">
+              <span id="err-phone" class="text-red-400 text-xxs font-mono mt-1 hidden">Enter a valid phone number.</span>
+            </div>
+
+            <!-- Reservation Date -->
+            <div class="space-y-1.5">
+              <label for="reservationDate" class="text-xs font-semibold text-slate-300 tracking-wide block">Reservation Date</label>
+              <input type="date" id="reservationDate" name="reservationDate" required class="w-full bg-[#111726]/65 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-500 transition-all">
+              <span id="err-reservationDate" class="text-red-400 text-xxs font-mono mt-1 hidden">Pick today or a future date.</span>
+            </div>
+
+            <!-- Reservation Time -->
+            <div class="space-y-1.5">
+              <label for="reservationTime" class="text-xs font-semibold text-slate-300 tracking-wide block">Reservation Time</label>
+              <select id="reservationTime" name="reservationTime" class="w-full bg-[#111726] border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-500 transition-all">
+                <option value="17:00">17:00 (5:00 PM)</option>
+                <option value="17:30">17:30 (5:30 PM)</option>
+                <option value="18:00" selected>18:00 (6:00 PM)</option>
+                <option value="18:30">18:30 (6:30 PM)</option>
+                <option value="19:00">19:00 (7:00 PM)</option>
+                <option value="19:30">19:30 (7:30 PM)</option>
+                <option value="20:00">20:00 (8:00 PM)</option>
+                <option value="20:30">20:30 (8:30 PM)</option>
+                <option value="21:00">21:00 (9:00 PM)</option>
+                <option value="21:30">21:30 (9:30 PM)</option>
+              </select>
+            </div>
+
+            <!-- Guests -->
+            <div class="space-y-1.5 md:col-span-2">
+              <label for="guests" class="text-xs font-semibold text-slate-300 tracking-wide block">Number of Guests</label>
+              <select id="guests" name="guests" class="w-full bg-[#111726] border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-500 transition-all">
+                <option value="1">1 Guest</option>
+                <option value="2" selected>2 Guests</option>
+                <option value="3">3 Guests</option>
+                <option value="4">4 Guests</option>
+                <option value="5">5 Guests</option>
+                <option value="6">6 Guests</option>
+                <option value="8">8 Guests (Large Table)</option>
+                <option value="10">10 Guests (Large Table)</option>
+              </select>
+            </div>
+
+            <!-- Special Requests -->
+            <div class="space-y-1.5 md:col-span-2">
+              <label for="specialRequest" class="text-xs font-semibold text-slate-300 tracking-wide block">Special Requests</label>
+              <textarea id="specialRequest" name="specialRequest" rows="3" placeholder="Allergies, wheelchair access, window selection preference..." class="w-full bg-[#111726]/65 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-500 transition-all"></textarea>
+            </div>
+          </div>
+
+          <!-- Network Alert Display -->
+          <div id="form-error" class="bg-red-950/20 border border-red-500/20 p-4 rounded-xl text-xs text-red-300 hidden"></div>
+
+          <!-- Submit Button -->
+          <button type="submit" id="submit-btn" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-4 px-4 rounded-xl shadow-lg transition-all tracking-wide text-sm flex items-center justify-center gap-2">
+            <span id="spinner" class="hidden w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></span>
+            Reserve Table
+          </button>
+        </form>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT & HOURS SECTION -->
+  <section id="contact" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 mb-20">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+      <div class="bg-[#0b0f19] border border-slate-800 rounded-2xl p-8 flex flex-col justify-between">
+        <div>
+          <span class="text-amber-500 font-mono text-xs font-bold uppercase tracking-widest block">Contact Concierge</span>
+          <h3 class="font-display font-bold text-2xl text-white mt-1">Visit Our Brasserie</h3>
+          <p class="text-slate-400 text-sm mt-3 leading-relaxed">Experience pristine standards. Our lobby hosting team welcomes walk-ins when seats permit, but secure online bookings are prioritized.</p>
+        </div>
+
+        <div class="space-y-4 text-xs text-slate-300 mt-6 md:mt-0">
+          <div>
+            <strong class="text-white block text-sm">Location Address</strong>
+            <span class="text-slate-400 block mt-0.5">452 Gourmet Blvd, Culinary Heights</span>
+          </div>
+          <div>
+            <strong class="text-white block text-sm">Hours of Operation</strong>
+            <span class="text-slate-400 block mt-0.5">Monday - Sunday: 12:00 PM - 10:00 PM</span>
+          </div>
+          <div>
+            <strong class="text-white block text-sm">Concierge Assistance</strong>
+            <span class="text-slate-400 block mt-0.5">Phone: +1 (555) 019-2834</span>
+            <span class="text-slate-500 block mt-0.5">Email: support@tablebook.com</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="rounded-2xl overflow-hidden min-h-[300px] relative">
+        <img src="https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80" alt="Chefs working inside luxury kitchen" class="w-full h-full object-cover brightness-50">
+        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent flex flex-col justify-end p-8">
+          <h4 class="font-display font-medium text-xl text-white">Masterful Cuisine</h4>
+          <p class="text-slate-300 text-xs mt-1">Enjoy curated seasonal plates crafted from certified ingredients.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="bg-[#0b0f19] border-t border-slate-800/80 py-12 text-slate-600 text-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex flex-col md:flex-row justify-between items-center gap-6">
+      <div class="text-center md:text-left">
+        <span class="font-display font-black text-sm text-white">Table<span class="text-amber-400">Book</span></span>
+        <p class="mt-1 leading-relaxed text-[10px]">Cloudflare Pages & Google Sheets Synchronized Datastore Booking Ecosystem.</p>
+      </div>
+      <div>
+        <span class="font-mono uppercase text-slate-500">&copy; 2026 TableBook Restaurants. All Rights Reserved.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

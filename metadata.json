@@ -1,0 +1,6 @@
+{
+  "name": "TableBook",
+  "description": "Premium restaurant reservation system featuring a modern public booking website and an elegant SaaS admin dashboard integrated with Google Sheets and Google Apps Script.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

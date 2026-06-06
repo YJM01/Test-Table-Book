@@ -1,0 +1,76 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-serif: "Playfair Display", Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-display: "Playfair Display", var(--font-sans);
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  
+  --color-gold-50: #fbf9f4;
+  --color-gold-100: #f4edd9;
+  --color-gold-200: #e8dbb4;
+  --color-gold-300: #dbc185;
+  --color-gold-400: #ceaa5e;
+  --color-gold-500: #c5a059;
+  --color-gold-600: #a7813c;
+  --color-gold-700: #84622b;
+  --color-gold-800: #62461f;
+  --color-gold-900: #422f16;
+  --color-gold-950: #291c0b;
+}
+
+/* Custom visual utilities to match Elegant Dark style guide */
+.glassmorphism {
+  background: rgba(10, 10, 10, 0.75);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.125rem; /* rounded-sm */
+}
+
+.glassmorphism-light {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.125rem; /* rounded-sm */
+}
+
+.glassmorphism-gold {
+  background: rgba(197, 160, 89, 0.06);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(197, 160, 89, 0.18);
+  border-radius: 0.125rem; /* rounded-sm */
+}
+
+/* Base resets & styles */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  background-color: #0a0a0a;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(197, 160, 89, 0.5);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(197, 160, 89, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(197, 160, 89, 0);
+  }
+}
+
+.pulse-gold {
+  animation: pulse-ring 2s infinite;
+}
