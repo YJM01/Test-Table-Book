@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let activeGeneratedPin = '';
 
   // Load setup profiles
-  const init = () => {
+  const init = async () => {
     // A. Configurations
     const savedConfig = localStorage.getItem('tablebook_config');
     if (savedConfig) {
@@ -78,6 +78,41 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     dbStateIndicator.textContent = config.isSyncEnabled && config.googleSheetsUrl ? 'Google Sheets Live' : 'Sandbox (No Sync)';
+
+    // C. Check Auto Cloudflare Access Authentication Session
+    try {
+      const response = await fetch('/cdn-cgi/access/get-identity');
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.email) {
+          console.log('Real Cloudflare Access session detected:', data.email);
+          const detectedEmail = data.email.trim().toLowerCase();
+          
+          // Add to whitelist in memory + localStorage if missing
+          const isWhitelisted = config.adminEmailWhitelist.some(white => white.trim().toLowerCase() === detectedEmail);
+          if (!isWhitelisted) {
+            config.adminEmailWhitelist.push(detectedEmail);
+            localStorage.setItem('tablebook_config', JSON.stringify(config));
+            whitelistInput.value = config.adminEmailWhitelist.join(', ');
+          }
+          
+          activeUser = detectedEmail;
+          cfLoginScreen.classList.add('hidden');
+          adminDashboardCanvas.classList.remove('hidden');
+          sessEmail.textContent = activeUser;
+          
+          // Load and Render
+          if (config.isSyncEnabled && config.googleSheetsUrl) {
+            fetchCloudReservations();
+          } else {
+            renderDashboard();
+          }
+          startAutoSyncTimer();
+        }
+      }
+    } catch (err) {
+      console.log('No Cloudflare Access session found (simulation mode loaded)');
+    }
   };
 
   init();

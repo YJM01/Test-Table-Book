@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Shield, Key, AlertTriangle, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { AppConfig } from '../types';
 
@@ -19,6 +19,34 @@ export default function AccessControl({ config, onLoginSuccess }: AccessControlP
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [simulatedPin, setSimulatedPin] = useState('');
+
+  useEffect(() => {
+    const autoAuthenticate = async () => {
+      try {
+        const response = await fetch('/cdn-cgi/access/get-identity');
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.email) {
+            const detectedEmail = data.email.trim().toLowerCase();
+            // Automatically make sure their authenticated email is whitelisted
+            const isWhitelisted = config.adminEmailWhitelist.some(
+              whitelisted => whitelisted.trim().toLowerCase() === detectedEmail
+            );
+            if (!isWhitelisted) {
+              const updatedWhitelist = [...config.adminEmailWhitelist, detectedEmail];
+              const updatedConfig = { ...config, adminEmailWhitelist: updatedWhitelist };
+              localStorage.setItem('tablebook_config', JSON.stringify(updatedConfig));
+              config.adminEmailWhitelist = updatedWhitelist;
+            }
+            onLoginSuccess(detectedEmail);
+          }
+        }
+      } catch (err) {
+        console.debug('Not running inside authenticated Cloudflare Access tunnel.', err);
+      }
+    };
+    autoAuthenticate();
+  }, [config, onLoginSuccess]);
 
   const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault();
