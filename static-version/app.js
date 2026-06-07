@@ -146,7 +146,23 @@ document.addEventListener('DOMContentLoaded', () => {
       spinner.classList.add('hidden');
     }
   });
-
+const API_URL =
+"https://script.google.com/macros/s/AKfycbw2VIzTKkXeWz0uN18gc6m-QzmnfIvBdzNB4JOAzd8RJ8VB-wS4OMPBEjNWyAVNgGN1/execc";
+  
+  fetch(API_URL, {
+  method: "POST",
+  body: JSON.stringify({
+    customerName,
+    email,
+    phone,
+    date,
+    time,
+    guests,
+    specialRequest
+  })
+});
+  
+  
   const saveLocalBackup = (record) => {
     let current = [];
     const saved = localStorage.getItem('tablebook_reservations');
