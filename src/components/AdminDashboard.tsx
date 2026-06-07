@@ -10,6 +10,45 @@ import {
 } from 'lucide-react';
 import { Reservation, ReservationStatus, AppConfig, DashboardStats } from '../types';
 
+const playNotificationSound = () => {
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const now = ctx.currentTime;
+    
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(587.33, now); // D5
+    osc1.frequency.exponentialRampToValueAtTime(880, now + 0.15); // A5
+    
+    gain1.gain.setValueAtTime(0.15, now);
+    gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+    
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(now);
+    osc1.stop(now + 0.3);
+    
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(880, now + 0.1); // A5
+    osc2.frequency.exponentialRampToValueAtTime(1174.66, now + 0.25); // D6
+    
+    gain2.gain.setValueAtTime(0.15, now + 0.1);
+    gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+    
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(now + 0.1);
+    osc2.stop(now + 0.4);
+  } catch (e) {
+    console.debug('Audio play blocked or unavailable:', e);
+  }
+};
+
 interface AdminDashboardProps {
   reservations: Reservation[];
   config: AppConfig;
@@ -38,16 +77,83 @@ export default function AdminDashboard({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [actioningId, setActioningId] = useState<string | null>(null);
   
-  // Timer for auto-refresh (30 seconds)
-  const [countdown, setCountdown] = useState(30);
+  // Last sync time state tracker
+  const [lastSyncTime, setLastSyncTime] = useState<string>(() => {
+    return new Date().toLocaleTimeString();
+  });
 
-  // Auto-refresh interval
+  // Timer for auto-refresh (5 seconds)
+  const [countdown, setCountdown] = useState(5);
+
+  // Live updates states
+  const [knownReservationIds, setKnownReservationIds] = useState<string[]>([]);
+  const [newlyAddedIds, setNewlyAddedIds] = useState<string[]>([]);
+  const [latestNewReservation, setLatestNewReservation] = useState<Reservation | null>(null);
+
+  // Seeding known reservation IDs on load or when empty
+  useEffect(() => {
+    if (reservations.length > 0 && knownReservationIds.length === 0) {
+      setKnownReservationIds(reservations.map((r) => r.id));
+    }
+  }, [reservations, knownReservationIds]);
+
+  // Monitor for incoming updates from active polling channel
+  useEffect(() => {
+    if (reservations.length > 0 && knownReservationIds.length > 0) {
+      const currentIds = reservations.map((r) => r.id);
+      const added = reservations.filter((r) => !knownReservationIds.includes(r.id));
+
+      if (added.length > 0) {
+        console.log('[TableBook Dashboard] New reservations detected via polling loop:', added);
+        playNotificationSound();
+        setLatestNewReservation(added[0]);
+        
+        const addedIds = added.map((r) => r.id);
+        setNewlyAddedIds((prev) => [...prev, ...addedIds]);
+
+        // Auto-remove highlight styling from rows after 8 seconds
+        setTimeout(() => {
+          setNewlyAddedIds((prev) => prev.filter((id) => !addedIds.includes(id)));
+        }, 8000);
+
+        // Auto-dismiss the toast popup notification after 5 seconds
+        setTimeout(() => {
+          setLatestNewReservation((prev) => (prev && addedIds.includes(prev.id) ? null : prev));
+        }, 5000);
+      }
+
+      // Always synchronize known list size and items mapping state
+      setKnownReservationIds(currentIds);
+    }
+  }, [reservations, knownReservationIds]);
+
+  // Stable reference to callback
+  const onForceRefreshRef = React.useRef(onForceRefresh);
+  useEffect(() => {
+    onForceRefreshRef.current = onForceRefresh;
+  }, [onForceRefresh]);
+
+  const handleAutoRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await onForceRefreshRef.current();
+      const now = new Date();
+      setLastSyncTime(now.toLocaleTimeString());
+    } catch (e) {
+      console.error('[TableBook Dashboard] Auto-refresh fetch failure:', e);
+    } finally {
+      setIsRefreshing(false);
+      setCountdown(5);
+    }
+  };
+
+  // Timer loop for auto-sync countdown (5 seconds)
   useEffect(() => {
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
           handleAutoRefresh();
-          return 30; // reset
+          return 5;
         }
         return prev - 1;
       });
@@ -55,18 +161,6 @@ export default function AdminDashboard({
 
     return () => clearInterval(timer);
   }, []);
-
-  const handleAutoRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      await onForceRefresh();
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsRefreshing(false);
-      setCountdown(30);
-    }
-  };
 
   const handleManualRefresh = async () => {
     await handleAutoRefresh();
@@ -127,18 +221,62 @@ export default function AdminDashboard({
   });
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in relative">
       
+      {/* Real-time floating overlay toast notification for incoming entries */}
+      {latestNewReservation && (
+        <div className="fixed top-20 right-6 z-50 p-4 bg-[#0a0a0a] border border-[#c5a059]/50 rounded-sm shadow-2xl max-w-sm animate-fade-in divide-y divide-white/10 font-sans">
+          <div className="flex items-center justify-between pb-2">
+            <span className="text-xs font-mono font-bold text-[#c5a059] flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-[#c5a059] animate-pulse" />
+              New Reservation Received
+            </span>
+            <button
+              onClick={() => setLatestNewReservation(null)}
+              className="text-white/40 hover:text-white transition-colors cursor-pointer select-none ml-6 font-bold"
+            >
+              ×
+            </button>
+          </div>
+          <div className="pt-2 text-xxs font-mono space-y-1 text-white/70">
+            <div className="flex justify-between gap-4">
+              <span className="text-white/40">ID:</span>
+              <span className="text-[#c5a059] font-bold">{latestNewReservation.id}</span>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span className="text-white/40">Customer:</span>
+              <span className="text-white font-medium">{latestNewReservation.customerName}</span>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span className="text-white/40">Guests:</span>
+              <span className="text-white font-medium">{latestNewReservation.guests}</span>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span className="text-white/40 font-sans">Date:</span>
+              <span className="text-white/80 font-sans">{latestNewReservation.reservationDate} @ {latestNewReservation.reservationTime}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Upper Dashboard Controls */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-5">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
             <span className="p-1 px-2.5 bg-[#c5a059]/10 border border-[#c5a059]/20 text-[#c5a059] text-xxs font-mono rounded-sm font-semibold tracking-wider uppercase">
               Operational Console
             </span>
-            <div className="flex items-center gap-1.5 text-xs text-white/40 font-mono">
-              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></span>
-              Auto-sync: {countdown}s remaining
+            <div className="flex items-center gap-4 text-xs text-white/40 font-mono">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 bg-[#c5a059] rounded-full animate-ping"></span>
+                <span>Auto-sync: {countdown}s</span>
+              </div>
+              {lastSyncTime && (
+                <div className="flex items-center gap-1.5 border-l border-white/10 pl-4">
+                  <span className="text-[#c5a059] font-semibold">Last Sync:</span>
+                  <span className="text-white/60">{lastSyncTime}</span>
+                </div>
+              )}
             </div>
           </div>
           <h2 className="font-serif text-2xl text-white mt-1 flex items-center gap-2">
@@ -301,12 +439,25 @@ export default function AdminDashboard({
               <tbody className="divide-y divide-white/10">
                 {filteredReservations.map((res) => {
                   const isActioning = actioningId === res.id;
+                  const isNew = newlyAddedIds.includes(res.id);
 
                   return (
-                    <tr key={res.id} className="hover:bg-white/5 text-xs transition-colors">
+                    <tr 
+                      key={res.id} 
+                      className={`text-xs transition-all duration-1000 ${
+                        isNew 
+                          ? 'bg-[#c5a059]/10 shadow-[inset_0_0_15px_rgba(197,160,89,0.15)] border-y border-[#c5a059]/20 animate-pulse' 
+                          : 'hover:bg-white/5'
+                      }`}
+                    >
                       {/* ID */}
-                      <td className="py-4 px-5 font-mono text-xxs font-bold text-[#c5a059]">
+                      <td className={`py-4 px-5 font-mono text-xxs font-bold ${isNew ? 'text-white' : 'text-[#c5a059]'}`}>
                         {res.id}
+                        {isNew && (
+                          <span className="ml-2 px-1 rounded-sm bg-[#c5a059] text-black font-semibold text-[9px] uppercase tracking-wide">
+                            New
+                          </span>
+                        )}
                       </td>
 
                       {/* Contact */}
