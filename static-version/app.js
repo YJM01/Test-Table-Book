@@ -28,10 +28,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     return {
-      googleSheetsUrl: '',
-      isSyncEnabled: false,
-      adminEmailWhitelist: ['yunilajanu72@gmail.com', 'admin@tablebook.com']
-    };
+  googleSheetsUrl: 'https://script.google.com/macros/s/AKfycbw2VIzTKkXeWz0uN18gc6m-QzmnfIvBdzNB4JOAzd8RJ8VB-wS4OMPBEjNWyAVNgGN1/exec',
+  isSyncEnabled: true,
+  adminEmailWhitelist: ['yunilajanu72@gmail.com', 'admin@tablebook.com']
+};
   };
 
   const config = loadConfig();
