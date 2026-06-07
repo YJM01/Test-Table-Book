@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export type ReservationStatus = 'Pending' | 'Confirmed' | 'Rejected';
+export type ReservationStatus = 'Pending' | 'Confirmed' | 'Approved' | 'Rejected';
 
 export interface Reservation {
   id: string;

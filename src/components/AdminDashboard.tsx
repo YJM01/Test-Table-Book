@@ -195,7 +195,7 @@ export default function AdminDashboard({
     (acc, cur) => {
       acc.total += 1;
       if (cur.status === 'Pending') acc.pending += 1;
-      else if (cur.status === 'Confirmed') acc.confirmed += 1;
+      else if (cur.status === 'Confirmed' || cur.status === 'Approved') acc.confirmed += 1;
       else if (cur.status === 'Rejected') acc.rejected += 1;
       return acc;
     },
@@ -399,7 +399,7 @@ export default function AdminDashboard({
               <Filter className="w-3 h-3" />
               Filter State:
             </span>
-            {(['All', 'Pending', 'Confirmed', 'Rejected'] as const).map((filterOpt) => (
+            {(['All', 'Pending', 'Approved', 'Confirmed', 'Rejected'] as const).map((filterOpt) => (
               <button
                 key={filterOpt}
                 onClick={() => setSelectedFilter(filterOpt)}
@@ -509,14 +509,14 @@ export default function AdminDashboard({
                       {/* Status */}
                       <td className="py-4 px-4">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold select-none ${
-                          res.status === 'Confirmed' 
+                          res.status === 'Confirmed' || res.status === 'Approved'
                             ? 'bg-emerald-950/30 border border-emerald-500/20 text-emerald-400' 
                             : res.status === 'Rejected'
                             ? 'bg-rose-950/30 border border-rose-500/20 text-rose-400'
                             : 'bg-amber-950/30 border border-amber-500/20 text-amber-400'
                         }`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${
-                            res.status === 'Confirmed' ? 'bg-emerald-400' : res.status === 'Rejected' ? 'bg-rose-400' : 'bg-amber-400'
+                            res.status === 'Confirmed' || res.status === 'Approved' ? 'bg-emerald-400' : res.status === 'Rejected' ? 'bg-rose-400' : 'bg-amber-400'
                           }`}></span>
                           {res.status}
                         </span>
@@ -532,7 +532,7 @@ export default function AdminDashboard({
                               {res.status === 'Pending' && (
                                 <>
                                   <button
-                                    onClick={() => handleStatusChange(res.id, 'Confirmed')}
+                                    onClick={() => handleStatusChange(res.id, 'Approved')}
                                     className="px-2.5 py-1.5 bg-[#c5a059] hover:bg-[#b08e4d] text-black text-xxs font-bold uppercase tracking-wider rounded-sm cursor-pointer transition-all"
                                     title="Approve Table Reservation (dispatches confirmation email)"
                                   >

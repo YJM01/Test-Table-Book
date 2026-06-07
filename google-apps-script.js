@@ -66,10 +66,16 @@ function doGet(e) {
 function doPost(e) {
   try {
     var rawData;
-    if (e.postData.type === "application/json") {
-      rawData = JSON.parse(e.postData.contents);
-    } else {
+    if (e && e.postData && e.postData.contents) {
+      try {
+        rawData = JSON.parse(e.postData.contents);
+      } catch (jsonError) {
+        rawData = e.parameter;
+      }
+    } else if (e && e.parameter) {
       rawData = e.parameter;
+    } else {
+      rawData = {};
     }
     
     var action = rawData.action || "create";
@@ -140,7 +146,7 @@ function handleCreateReservation(data, sheet) {
 // Subhandler: Update Reservation Status (and trigger email notification)
 function handleUpdateStatus(data, sheet) {
   var resId = data.id;
-  var newStatus = data.status; // "Confirmed" or "Rejected"
+  var newStatus = data.status; // "Approved", "Confirmed", or "Rejected"
   
   if (!resId || !newStatus) {
     return createJsonResponse({ status: "error", message: "Missing reservation ID or new status." });
@@ -160,7 +166,10 @@ function handleUpdateStatus(data, sheet) {
   }
   
   for (var i = 1; i < rows.length; i++) {
-    if (rows[i][idColIndex] === resId) {
+    var checkId = String(rows[i][idColIndex]).trim();
+    var targetId = String(resId).trim();
+    
+    if (checkId === targetId) {
       // Update cell in Sheets (row index is 1-based, plus header offset)
       sheet.getRange(i + 1, statusColIndex + 1).setValue(newStatus);
       
@@ -170,8 +179,8 @@ function handleUpdateStatus(data, sheet) {
       var resDate = rows[i][dateColIndex];
       var resTime = rows[i][timeColIndex];
       
-      // Send appropriate notification emails
-      if (newStatus === "Confirmed") {
+      // Send appropriate notification emails using MailApp
+      if (newStatus === "Approved" || newStatus === "Confirmed") {
         sendConfirmationEmail(customerEmail, customerName, resDate, resTime);
       } else if (newStatus === "Rejected") {
         sendRejectionEmail(customerEmail, customerName, resDate, resTime);
@@ -184,7 +193,7 @@ function handleUpdateStatus(data, sheet) {
     }
   }
   
-  return createJsonResponse({ status: "error", message: "Reservation ID not found." });
+  return createJsonResponse({ status: "error", message: "Reservation ID not found (" + resId + ")." });
 }
 
 // Subhandler: Delete reservation row
@@ -199,7 +208,10 @@ function handleDeleteReservation(data, sheet) {
   var idColIndex = headers.indexOf("ID");
   
   for (var i = 1; i < rows.length; i++) {
-    if (rows[i][idColIndex] === resId) {
+    var checkId = String(rows[i][idColIndex]).trim();
+    var targetId = String(resId).trim();
+    
+    if (checkId === targetId) {
       sheet.deleteRow(i + 1); // delete 1-based row index
       return createJsonResponse({ status: "success", message: "Reservation deleted successfully." });
     }
