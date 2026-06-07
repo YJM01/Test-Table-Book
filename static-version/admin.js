@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Mock initial dataset for first-load visuals
   const INITIAL_MOCK_RESERVATIONS = [
-    { id: 'RES-891042', customerName: 'Diana Prince', email: 'diana.prince@themscyra.gov', phone: '312-555-0143', reservationDate: '2026-06-12', reservationTime: '19:30', guests: 2, specialRequest: 'Anniversary dinner. Window seating prefered.', status: 'Confirmed', createdAt: new Date().toISOString() },
+    { id: 'RES-891042', customerName: 'Diana Prince', email: 'diana.prince@themscyra.gov', phone: '312-555-0143', reservationDate: '2026-06-12', reservationTime: '19:30', guests: 2, specialRequest: 'Anniversary dinner. Window seating prefered.', status: 'Approved', createdAt: new Date().toISOString() },
     { id: 'RES-321098', customerName: 'Bruce Wayne', email: 'bruce@waynecorp.com', phone: 'Gotham-100', reservationDate: '2026-06-10', reservationTime: '20:30', guests: 6, specialRequest: 'N/A. Privacy high priority. VIP space only.', status: 'Pending', createdAt: new Date().toISOString() },
     { id: 'RES-415263', customerName: 'Stephen Strange', email: 'doctor.strange@sanctum.org', phone: '212-555-0811', reservationDate: '2026-06-15', reservationTime: '18:00', guests: 4, specialRequest: 'Herbal tea slots on standby.', status: 'Pending', createdAt: new Date().toISOString() },
     { id: 'RES-112344', customerName: 'Eleanor Vance', email: 'eleanor@vance.net', phone: '617-555-0912', reservationDate: '2026-06-05', reservationTime: '17:00', guests: 2, specialRequest: '', status: 'Rejected', createdAt: new Date().toISOString() }
@@ -44,15 +44,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let reservations = [];
   let config = {
-    googleSheetsUrl: '',
-    isSyncEnabled: false,
+    googleSheetsUrl: 'https://script.google.com/macros/s/AKfycbw2VIzTKkXeWz0uN18gc6m-QzmnfIvBdzNB4JOAzd8RJ8VB-wS4OMPBEjNWyAVNgGN1/exec',
+    isSyncEnabled: true,
     adminEmailWhitelist: ['yunilajanu72@gmail.com', 'admin@tablebook.com']
   };
 
   let activeFilter = 'All';
   let activeSearch = '';
   let activeUser = null;
-  let countdown = 30;
+  let countdown = 5;
   let refreshTimer = null;
   let activeGeneratedPin = '';
 
@@ -61,7 +61,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // A. Configurations
     const savedConfig = localStorage.getItem('tablebook_config');
     if (savedConfig) {
-      try { config = JSON.parse(savedConfig); } catch (e) {}
+      try { 
+        config = JSON.parse(savedConfig); 
+        if (!config.googleSheetsUrl) {
+          config.googleSheetsUrl = 'https://script.google.com/macros/s/AKfycbw2VIzTKkXeWz0uN18gc6m-QzmnfIvBdzNB4JOAzd8RJ8VB-wS4OMPBEjNWyAVNgGN1/exec';
+          config.isSyncEnabled = true;
+        }
+      } catch (e) {}
     } else {
       localStorage.setItem('tablebook_config', JSON.stringify(config));
     }
@@ -102,20 +108,19 @@ document.addEventListener('DOMContentLoaded', () => {
           sessEmail.textContent = activeUser;
           
           // Load and Render
-          if (config.isSyncEnabled && config.googleSheetsUrl) {
-            fetchCloudReservations();
-          } else {
-            renderDashboard();
-          }
+          await loadReservations();
           startAutoSyncTimer();
         }
       }
     } catch (err) {
       console.log('No Cloudflare Access session found (simulation mode loaded)');
     }
-  };
 
-  init();
+    // Even if no active session detected automatically, we can trigger loading in background
+    if (!activeUser) {
+      await loadReservations();
+    }
+  };
 
   // 1. SSO LOGIN SYSTEM WITH CLOUDFLARE ACCORDANCE
   cfLoginForm.addEventListener('submit', (e) => {
@@ -145,11 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
       sessEmail.textContent = activeUser;
       
       // Load and Render
-      if (config.isSyncEnabled && config.googleSheetsUrl) {
-        fetchCloudReservations();
-      } else {
-        renderDashboard();
-      }
+      loadReservations();
       startAutoSyncTimer();
     } else {
       alert('Incorrect Verification PIN.');
@@ -162,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const stats = reservations.reduce((acc, cur) => {
       acc.total++;
       if (cur.status === 'Pending') acc.pending++;
-      else if (cur.status === 'Confirmed') acc.confirmed++;
+      else if (cur.status === 'Confirmed' || cur.status === 'Approved') acc.confirmed++;
       else if (cur.status === 'Rejected') acc.rejected++;
       return acc;
     }, { total: 0, pending: 0, confirmed: 0, rejected: 0 });
@@ -175,7 +176,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Filter & Compiles matching rows
     let visible = reservations;
     if (activeFilter !== 'All') {
-      visible = visible.filter(res => res.status === activeFilter);
+      if (activeFilter === 'Confirmed') {
+        visible = visible.filter(res => res.status === 'Confirmed' || res.status === 'Approved');
+      } else {
+        visible = visible.filter(res => res.status === activeFilter);
+      }
     }
     if (activeSearch) {
       const q = activeSearch.toLowerCase().trim();
@@ -198,8 +203,8 @@ document.addEventListener('DOMContentLoaded', () => {
       row.className = 'border-b border-slate-800/60 hover:bg-slate-800/10 text-xs transition-colors h-14';
 
       let statusBadge = '';
-      if (res.status === 'Confirmed') {
-        statusBadge = `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/30 border border-emerald-500/20 text-emerald-400"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>Confirmed</span>`;
+      if (res.status === 'Confirmed' || res.status === 'Approved') {
+        statusBadge = `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/30 border border-emerald-500/20 text-emerald-400"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>${res.status}</span>`;
       } else if (res.status === 'Rejected') {
         statusBadge = `<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-950/30 border border-rose-500/20 text-rose-400"><span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>Rejected</span>`;
       } else {
@@ -209,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
       let actionsLayout = '';
       if (res.status === 'Pending') {
         actionsLayout = `
-          <button onclick="changeReservationStatus('${res.id}', 'Confirmed')" class="px-2.5 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xxs font-bold rounded-lg transition-transform mr-1">Approve</button>
+          <button onclick="changeReservationStatus('${res.id}', 'Approved')" class="px-2.5 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xxs font-bold rounded-lg transition-transform mr-1">Approve</button>
           <button onclick="changeReservationStatus('${res.id}', 'Rejected')" class="px-2.5 py-1.5 bg-slate-800 hover:bg-[#200e12] border border-slate-800 text-slate-400 hover:text-rose-400 text-xxs font-bold rounded-lg transition-colors mr-1">Reject</button>
         `;
       } else {
@@ -300,44 +305,67 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // 3. API SYNCS FROM SHEETS SERVICE GS
-  const fetchCloudReservations = async () => {
-    try {
-      const response = await fetch(config.googleSheetsUrl, { method: 'GET', mode: 'cors' });
-      const result = await response.json();
-      if (result && result.status === 'success') {
-        const formatted = result.data.map(item => ({
-          id: item.ID,
-          customerName: item.CustomerName,
-          email: item.Email,
-          phone: String(item.Phone),
-          reservationDate: item.ReservationDate,
-          reservationTime: item.ReservationTime,
-          guests: Number(item.Guests),
-          specialRequest: item.SpecialRequest || '',
-          status: item.Status,
-          createdAt: item.CreatedAt
-        }));
-        
-        reservations = formatted;
-        localStorage.setItem('tablebook_reservations', JSON.stringify(formatted));
-        renderDashboard();
+  const loadReservations = async () => {
+    console.log("Loading reservations...");
+    if (config.isSyncEnabled && config.googleSheetsUrl) {
+      try {
+        const response = await fetch(config.googleSheetsUrl, { method: 'GET', mode: 'cors' });
+        const result = await response.json();
+        if (result && result.status === 'success') {
+          const formatted = result.data.map(item => ({
+            id: item.ID,
+            customerName: item.CustomerName,
+            email: item.Email,
+            phone: String(item.Phone),
+            reservationDate: item.ReservationDate,
+            reservationTime: item.ReservationTime,
+            guests: Number(item.Guests),
+            specialRequest: item.SpecialRequest || '',
+            status: item.Status,
+            createdAt: item.CreatedAt
+          }));
+          
+          reservations = formatted;
+          localStorage.setItem('tablebook_reservations', JSON.stringify(formatted));
+          renderDashboard();
+
+          // Action update timestamp UI
+          const lastSyncEl = document.getElementById('last-sync-time');
+          if (lastSyncEl) {
+            lastSyncEl.textContent = new Date().toLocaleTimeString();
+          }
+        }
+      } catch(e) {
+        console.warn('Sync server offline. Fallback to offline localStorage.', e);
       }
-    } catch(e) {
-      console.warn('Sync server offline. Fallback to offline localStorage.');
+    } else {
+      // Fetch sandbox reservations fallback
+      const savedRes = localStorage.getItem('tablebook_reservations');
+      if (savedRes) {
+        try { reservations = JSON.parse(savedRes); } catch (e) {}
+      }
+      renderDashboard();
+      
+      const lastSyncEl = document.getElementById('last-sync-time');
+      if (lastSyncEl) {
+        lastSyncEl.textContent = new Date().toLocaleTimeString() + " (Local)";
+      }
     }
+    console.log("Reservations loaded:", reservations.length);
   };
+
+  // Expose loadReservations globally as required
+  window.loadReservations = loadReservations;
 
   // 4. AUTO SYNC LOOP RUNNER
   const startAutoSyncTimer = () => {
     if (refreshTimer) clearInterval(refreshTimer);
+    countdown = 5;
     
     refreshTimer = setInterval(() => {
       countdown--;
       if (countdown <= 0) {
-        countdown = 30;
-        if (config.isSyncEnabled && config.googleSheetsUrl) {
-          fetchCloudReservations();
-        }
+        countdown = 5;
       }
       manualRefresh.innerHTML = `
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 15H16.5m1.5-12l-.4.3M3 12h.01"/></svg>
@@ -346,14 +374,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 1000);
   };
 
+  // Create automatic polling every 5 seconds as required
+  setInterval(async () => {
+    try {
+      await loadReservations();
+      console.log("Admin dashboard refreshed");
+    } catch(err) {
+      console.error("Refresh failed", err);
+    }
+  }, 5000);
+
   // Manual Trigger
   manualRefresh.addEventListener('click', () => {
-    countdown = 30;
-    if (config.isSyncEnabled && config.googleSheetsUrl) {
-      fetchCloudReservations();
-    } else {
-      renderDashboard();
-    }
+    countdown = 5;
+    loadReservations();
   });
 
   // Searching logic
@@ -394,7 +428,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     settingsDrawer.classList.add('hidden');
     if (config.isSyncEnabled) {
-      fetchCloudReservations();
+      loadReservations();
     } else {
       renderDashboard();
     }
@@ -410,4 +444,6 @@ document.addEventListener('DOMContentLoaded', () => {
     cfPinSection.classList.add('hidden');
   });
 
+  // Start initialization
+  init();
 });
