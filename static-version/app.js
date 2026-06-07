@@ -14,9 +14,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const savedConfig = localStorage.getItem('tablebook_config');
     if (savedConfig) {
       try {
-        return JSON.parse(savedConfig);
+        const parsed = JSON.parse(savedConfig);
+        if (parsed && typeof parsed.googleSheetsUrl === 'string') {
+          // Sanitize Google Apps Script URL ending with /execc to /exec
+          if (parsed.googleSheetsUrl.endsWith('/execc')) {
+            parsed.googleSheetsUrl = parsed.googleSheetsUrl.slice(0, -1);
+            console.log('Sanitized endpoint URL loaded: reverted /execc to /exec', parsed.googleSheetsUrl);
+          }
+        }
+        return parsed;
       } catch (e) {
-        console.error(e);
+        console.error('Error parsing tablebook_config:', e);
       }
     }
     return {
@@ -89,30 +97,48 @@ document.addEventListener('DOMContentLoaded', () => {
       specialRequest: formData.get('specialRequest').trim(),
     };
 
-    if (!validateForm(payload)) return;
+    console.log('[TableBook Client] Form payload collected:', payload);
+
+    if (!validateForm(payload)) {
+      console.warn('[TableBook Client] Validation failed for payload!');
+      return;
+    }
 
     // Show loading spinner
     submitBtn.disabled = true;
     spinner.classList.remove('hidden');
 
     try {
-      if (config.isSyncEnabled && config.googleSheetsUrl) {
-        // Real connection
-        const response = await fetch(config.googleSheetsUrl, {
+      // Re-verify endpoint and clean trailing 'c' if present
+      let targetUrl = config.googleSheetsUrl || '';
+      if (typeof targetUrl === 'string' && targetUrl.endsWith('/execc')) {
+        targetUrl = targetUrl.slice(0, -1);
+        config.googleSheetsUrl = targetUrl;
+        console.log('[TableBook Client] Cleaned target URL on submit:', targetUrl);
+      }
+
+      if (config.isSyncEnabled && targetUrl) {
+        const postBody = {
+          action: 'create',
+          ...payload
+        };
+        console.log('[TableBook Client] Sync active. Posting coordinates to endpoint:', targetUrl, 'Payload:', postBody);
+
+        const response = await fetch(targetUrl, {
           method: 'POST',
           mode: 'cors',
           headers: {
             'Content-Type': 'text/plain;charset=utf-8'
           },
-          body: JSON.stringify({
-            action: 'create',
-            ...payload
-          })
+          body: JSON.stringify(postBody)
         });
 
+        console.log('[TableBook Client] Network reply status code:', response.status);
         const result = await response.json();
+        console.log('[TableBook Client] Decoded JSON payload response:', result);
 
         if (result && result.status === 'success') {
+          console.log('[TableBook Client] Reservation registered successfully.', result.data);
           displaySuccess(result.data);
           saveLocalBackup({
             id: result.data.id,
@@ -121,10 +147,12 @@ document.addEventListener('DOMContentLoaded', () => {
             createdAt: result.data.createdAt
           });
         } else {
+          console.error('[TableBook Client] Sheets API returned error state:', result);
           throw new Error(result.message || 'Sheets script execution error.');
         }
 
       } else {
+        console.log('[TableBook Client] Google Sheets Sync unconfigured or inactive. Booking routed to Local Sandbox Database.');
         // local sandbox fallback database
         setTimeout(() => {
           const generatedId = `RES-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -134,35 +162,20 @@ document.addEventListener('DOMContentLoaded', () => {
             status: 'Pending',
             createdAt: new Date().toISOString()
           };
+          console.log('[TableBook Client] Local Sandbox state committed record:', localRecord);
           saveLocalBackup(localRecord);
           displaySuccess(localRecord);
         }, 1000);
       }
     } catch (err) {
-      console.error(err);
+      console.error('[TableBook Client] Integration Failure occurred:', err);
       formError.textContent = `Integration Error: ${err.message || 'Could not post to Google Web App URL. Verify settings or disable sync to test locally.'}`;
       formError.classList.remove('hidden');
       submitBtn.disabled = false;
       spinner.classList.add('hidden');
     }
   });
-const API_URL =
-"https://script.google.com/macros/s/AKfycbw2VIzTKkXeWz0uN18gc6m-QzmnfIvBdzNB4JOAzd8RJ8VB-wS4OMPBEjNWyAVNgGN1/execc";
-  
-  fetch(API_URL, {
-  method: "POST",
-  body: JSON.stringify({
-    customerName,
-    email,
-    phone,
-    date,
-    time,
-    guests,
-    specialRequest
-  })
-});
-  
-  
+
   const saveLocalBackup = (record) => {
     let current = [];
     const saved = localStorage.getItem('tablebook_reservations');
